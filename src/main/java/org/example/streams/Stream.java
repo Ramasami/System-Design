@@ -1,7 +1,5 @@
 package org.example.streams;
 
-import lombok.Data;
-
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -82,13 +80,10 @@ public class Stream<T> {
     }
 
     public Stream<T> peek(Consumer<T> consumer) {
-        TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
-            for (T item : items) {
-                consumer.accept(item);
-            }
-            return items;
+        return map(item -> {
+            consumer.accept(item);
+            return item;
         });
-        return appendPipeline(transformPipeline);
     }
 
     public Stream<T> sorted() {
@@ -398,9 +393,19 @@ public class Stream<T> {
         return new ReducePipeline<T, Iterator<T>>(transformPipelines, Collection::iterator).reduce(collection);
     }
 
-    @Data
-    public static class Pair<K, V> {
-        private final K key;
-        private final V value;
+    public void println() {
+        forEach(System.out::println);
+    }
+
+    public void print() {
+        System.out.print(this);
+    }
+
+    @Override
+    public String toString() {
+        return toList().toString();
+    }
+
+    public record Pair<K, V>(K key, V value) {
     }
 }

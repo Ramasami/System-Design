@@ -21,6 +21,50 @@ public class StreamsUtils {
         return new Stream<>(objects);
     }
 
+    public static Stream<Integer> stream(int[] objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("Array cannot be null");
+        }
+        List<Integer> objectList = new ArrayList<>(objects.length);
+        for (int object : objects) {
+            objectList.add(object);
+        }
+        return stream(objectList);
+    }
+
+    public static Stream<Long> stream(long[] objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("Array cannot be null");
+        }
+        List<Long> objectList = new ArrayList<>(objects.length);
+        for (long object : objects) {
+            objectList.add(object);
+        }
+        return stream(objectList);
+    }
+
+    public static Stream<Double> stream(double[] objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("Array cannot be null");
+        }
+        List<Double> objectList = new ArrayList<>(objects.length);
+        for (double object : objects) {
+            objectList.add(object);
+        }
+        return stream(objectList);
+    }
+
+    public static Stream<Boolean> stream(boolean[] objects) {
+        if (objects == null) {
+            throw new IllegalArgumentException("Array cannot be null");
+        }
+        List<Boolean> objectList = new ArrayList<>(objects.length);
+        for (boolean object : objects) {
+            objectList.add(object);
+        }
+        return stream(objectList);
+    }
+
     public static <K, V> Stream<Stream.Pair<K, V>> stream(Map<K, V> objects) {
         if (objects == null) {
             throw new IllegalArgumentException("Map cannot be null");
