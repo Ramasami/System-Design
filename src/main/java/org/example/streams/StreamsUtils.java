@@ -1,9 +1,6 @@
 package org.example.streams;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StreamsUtils {
 
@@ -18,7 +15,7 @@ public class StreamsUtils {
         if (objects == null) {
             throw new IllegalArgumentException("Array cannot be null");
         }
-        return new Stream<>(objects);
+        return new Stream<>(Arrays.asList(objects));
     }
 
     public static Stream<Integer> stream(int[] objects) {

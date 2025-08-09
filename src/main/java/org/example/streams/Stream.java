@@ -1,42 +1,45 @@
 package org.example.streams;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Stream<T> {
 
     private final Collection<?> collection;
     private final List<TransformPipeline<?, ?>> transformPipelines;
+    private final boolean isParallel;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(8);
 
     public Stream(Collection<T> collection) {
         this.collection = new ArrayList<>(collection);
-        transformPipelines = new ArrayList<>();
-    }
-
-    public Stream(Object[] array) {
-        this.collection = Arrays.asList(array);
-        transformPipelines = new ArrayList<>();
-    }
-
-    private Stream(Collection<?> collection, List<TransformPipeline<?, ?>> transformPipelines) {
-        this.collection = collection;
-        this.transformPipelines = transformPipelines;
+        this.transformPipelines = new ArrayList<>();
+        this.isParallel = false;
     }
 
     private <U> Stream<U> appendPipeline(TransformPipeline<T, U> transformPipeline) {
         transformPipelines.add(transformPipeline);
-        return new Stream<>(collection, transformPipelines);
+        return new Stream<>(collection, transformPipelines, isParallel);
     }
 
     public Stream<T> filter(Predicate<T> predicate) {
         TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
             List<T> filtered = new ArrayList<>();
+            List<Pair<T, AbstractStreamFuture<Boolean>>> futures = new ArrayList<>();
             for (T item : items) {
-                if (predicate.test(item)) {
-                    filtered.add(item);
+                futures.add(new Pair<>(item, execute(predicate, item)));
+            }
+            for (Pair<T, AbstractStreamFuture<Boolean>> pair : futures) {
+                if (pair.value().get()) {
+                    filtered.add(pair.key());
                 }
             }
             return filtered;
@@ -47,8 +50,12 @@ public class Stream<T> {
     public <U> Stream<U> map(Function<T, U> mapper) {
         TransformPipeline<T, U> transformPipeline = new TransformPipeline<>(items -> {
             List<U> mapped = new ArrayList<>();
+            List<AbstractStreamFuture<U>> futures = new ArrayList<>();
             for (T item : items) {
-                mapped.add(mapper.apply(item));
+                futures.add(execute(mapper, item));
+            }
+            for (AbstractStreamFuture<U> future : futures) {
+                mapped.add(future.get());
             }
             return mapped;
         });
@@ -70,8 +77,13 @@ public class Stream<T> {
     public <U> Stream<U> flatMap(Function<T, Stream<U>> flatMapper) {
         TransformPipeline<T, U> transformPipeline = new TransformPipeline<>(items -> {
             List<U> flatMapped = new ArrayList<>();
+            List<AbstractStreamFuture<Stream<U>>> futures = new ArrayList<>();
+
             for (T item : items) {
-                Stream<U> stream = flatMapper.apply(item);
+                futures.add(execute(flatMapper, item));
+            }
+            for (AbstractStreamFuture<Stream<U>> future : futures) {
+                Stream<U> stream = future.get();
                 flatMapped.addAll(stream.toList());
             }
             return flatMapped;
@@ -202,9 +214,13 @@ public class Stream<T> {
 
     public Optional<T> find(Predicate<T> predicate) {
         return new ReducePipeline<T, Optional<T>>(transformPipelines, items -> {
+            List<Pair<T, AbstractStreamFuture<Boolean>>> futures = new ArrayList<>();
             for (T item : items) {
-                if (predicate.test(item)) {
-                    return Optional.of(item);
+                futures.add(new Pair<>(item, execute(predicate, item)));
+            }
+            for (Pair<T, AbstractStreamFuture<Boolean>> future : futures) {
+                if (future.value().get()) {
+                    return Optional.of(future.key());
                 }
             }
             return Optional.empty();
@@ -213,8 +229,12 @@ public class Stream<T> {
 
     public void forEach(Consumer<T> consumer) {
         new ReducePipeline<T, Void>(transformPipelines, items -> {
+            List<AbstractStreamFuture<Void>> futures = new ArrayList<>();
             for (T item : items) {
-                consumer.accept(item);
+                futures.add(execute(consumer, item));
+            }
+            for (AbstractStreamFuture<Void> future : futures) {
+                future.get();
             }
             return null;
         }).reduce(collection);
@@ -222,8 +242,12 @@ public class Stream<T> {
 
     public boolean anyMatch(Predicate<T> predicate) {
         return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+            List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
-                if (predicate.test(item)) {
+                futures.add(execute(predicate, item));
+            }
+            for (AbstractStreamFuture<Boolean> future : futures) {
+                if (future.get()) {
                     return true;
                 }
             }
@@ -233,8 +257,12 @@ public class Stream<T> {
 
     public boolean allMatch(Predicate<T> predicate) {
         return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+            List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
-                if (!predicate.test(item)) {
+                futures.add(execute(predicate, item));
+            }
+            for (AbstractStreamFuture<Boolean> future : futures) {
+                if (!future.get()) {
                     return false;
                 }
             }
@@ -244,8 +272,12 @@ public class Stream<T> {
 
     public boolean noneMatch(Predicate<T> predicate) {
         return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+            List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
-                if (predicate.test(item)) {
+                futures.add(execute(predicate, item));
+            }
+            for (AbstractStreamFuture<Boolean> future : futures) {
+                if (future.get()) {
                     return false;
                 }
             }
@@ -400,6 +432,38 @@ public class Stream<T> {
     public void print() {
         System.out.print(this);
     }
+
+    public Stream<T> parallel() {
+        return new Stream<>(collection, transformPipelines, true);
+    }
+
+    public Stream<T> sequential() {
+        return new Stream<>(collection, transformPipelines, false);
+    }
+
+    private AbstractStreamFuture<Boolean> execute(Predicate<T> predicate, T item) {
+        if (!isParallel) {
+            return new SimpleFuture<>(predicate.test(item));
+        } else {
+            return new ParallelFuture<>(executorService.submit(() -> predicate.test(item)));
+        }
+    }
+
+    private <U> AbstractStreamFuture<U> execute(Function<T, U> mapper, T item) {
+        if (!isParallel) {
+            return new SimpleFuture<>(mapper.apply(item));
+        } else {
+            return new ParallelFuture<>(executorService.submit(() -> mapper.apply(item)));
+        }
+    }
+
+    private AbstractStreamFuture<Void> execute(Consumer<T> consumer, T item) {
+        return execute((Function<T, Void>) t -> {
+            consumer.accept(item);
+            return null;
+        }, item);
+    }
+
 
     @Override
     public String toString() {
