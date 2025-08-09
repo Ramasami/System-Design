@@ -1,6 +1,7 @@
 package org.example.streams;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class StreamsUtils {
 
@@ -27,6 +28,60 @@ public class StreamsUtils {
             objectList.add(object);
         }
         return stream(objectList);
+    }
+
+    public static Stream<Integer> intStream(int endExclusive) {
+        if (endExclusive < 0) {
+            throw new IllegalArgumentException("End must be non-negative");
+        }
+        return intRangeStream(0, endExclusive);
+    }
+
+    public static Stream<Integer> intRangeStream(int startInclusive, int endExclusive) {
+        if (startInclusive >= endExclusive) {
+            throw new IllegalArgumentException("Start must be less than end");
+        }
+        List<Integer> rangeList = new ArrayList<>(endExclusive - startInclusive);
+        for (int i = startInclusive; i < endExclusive; i++) {
+            rangeList.add(i);
+        }
+        return stream(rangeList);
+    }
+
+    public static Stream<Long> longStream(int endExclusive) {
+        if (endExclusive < 0) {
+            throw new IllegalArgumentException("End must be non-negative");
+        }
+        return longRangeStream(0, endExclusive);
+    }
+
+    public static Stream<Long> longRangeStream(int startInclusive, int endExclusive) {
+        if (startInclusive >= endExclusive) {
+            throw new IllegalArgumentException("Start must be less than end");
+        }
+        List<Long> rangeList = new ArrayList<>(endExclusive - startInclusive);
+        for (long i = startInclusive; i < endExclusive; i++) {
+            rangeList.add(i);
+        }
+        return stream(rangeList);
+    }
+
+    public static<T>  Stream<T> subscriberStream(Supplier<T> supplier, int size) {
+        if (supplier == null) {
+            throw new IllegalArgumentException("Consumer cannot be null");
+        }
+        return intStream(size)
+                .map(i -> supplier.get());
+    }
+
+    public static<T>  Stream<T> subscriberParallelStream(Supplier<T> supplier, int size) {
+        if (supplier == null) {
+            throw new IllegalArgumentException("Consumer cannot be null");
+        }
+        return intStream(size)
+                .parallel()
+                .map(i -> supplier.get())
+                .sequential();
     }
 
     public static Stream<Long> stream(long[] objects) {
