@@ -212,6 +212,30 @@ public class Stream<T> {
         }).reduce(collection);
     }
 
+    public Double sum(Function<T, Double> mapper) {
+        return new ReducePipeline<T, Double>(transformPipelines, items -> {
+            Iterator<T> iterator = items.iterator();
+            double sum = 0.0;
+            while (iterator.hasNext()) {
+                sum += mapper.apply(iterator.next());
+            }
+            return sum;
+        }).reduce(collection);
+    }
+
+    public Double average(Function<T, Double> mapper) {
+        return new ReducePipeline<T, Double>(transformPipelines, items -> {
+            Iterator<T> iterator = items.iterator();
+            double sum = 0.0;
+            long count = 0;
+            while (iterator.hasNext()) {
+                sum += mapper.apply(iterator.next());
+                count++;
+            }
+            return count == 0 ? 0.0 : sum / count;
+        }).reduce(collection);
+    }
+
     public Optional<T> find(Predicate<T> predicate) {
         return new ReducePipeline<T, Optional<T>>(transformPipelines, items -> {
             List<Pair<T, AbstractStreamFuture<Boolean>>> futures = new ArrayList<>();
@@ -463,7 +487,6 @@ public class Stream<T> {
             return null;
         }, item);
     }
-
 
     @Override
     public String toString() {
