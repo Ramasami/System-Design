@@ -11,6 +11,7 @@ public class TransformPipeline<IN, OUT> {
         this.function = function;
     }
 
+    @SuppressWarnings("unchecked")
     public Collection<OUT> apply(Collection<?> collection) {
         return function.apply((Collection<IN>) collection);
     }
