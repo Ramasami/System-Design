@@ -8,6 +8,7 @@ import org.junit.runners.JUnit4;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -92,6 +93,28 @@ public class StreamTest {
     }
 
     @Test
+    public void testReduceOperationWithAccumulator() {
+        Integer product = new Stream<>(numbers)
+                .reduce((a, b) -> a * b).orElse(1);
+        assertEquals(Integer.valueOf(720), product);
+    }
+
+    @Test
+    public void testReduceOperationWithAccumulatorAndEmptyInput() {
+        Integer product = new Stream<>(numbers)
+                .limit(0)
+                .reduce((a, b) -> a * b).orElse(1);
+        assertEquals(Integer.valueOf(1), product);
+    }
+
+    @Test
+    public void testReduceOperationWithAccumulatorAndIdentity() {
+        Integer product = new Stream<>(numbers)
+                .reduce((a, b) -> a * b, 2);
+        assertEquals(Integer.valueOf(1440), product);
+    }
+
+    @Test
     public void testCountOperation() {
         long count = new Stream<>(numbers)
                 .filter(n -> n > 2)
@@ -107,12 +130,43 @@ public class StreamTest {
     }
 
     @Test
+    public void testToMapOperation() {
+        Map<Integer, String> map = new Stream<>(numbers)
+                .distinct()
+                .toMap(Function.identity(), n -> "Number: " + n);
+        assertEquals(5, map.size());
+        assertEquals("Number: 1", map.get(1));
+        assertEquals("Number: 2", map.get(2));
+        assertEquals("Number: 3", map.get(3));
+        assertEquals("Number: 4", map.get(4));
+        assertEquals("Number: 5", map.get(5));
+    }
+
+    @Test
+    public void testToMapWithAccumulatorOperation() {
+        Map<Integer, String> map = new Stream<>(numbers)
+                .toMap(Function.identity(), n -> "Number: " + n, (a, b) -> a);
+        assertEquals(5, map.size());
+        assertEquals("Number: 1", map.get(1));
+        assertEquals("Number: 2", map.get(2));
+        assertEquals("Number: 3", map.get(3));
+        assertEquals("Number: 4", map.get(4));
+        assertEquals("Number: 5", map.get(5));
+    }
+
+    @Test
     public void testParallelFilterOperation() {
         List<Integer> result = new Stream<>(numbers)
                 .parallel(executor)
                 .filter(n -> n > 2)
                 .toList();
         assertEquals(Arrays.asList(3, 4, 5, 3), result);
+    }
+
+    @Test
+    public void testPrintOperation() {
+        new Stream<>(strings)
+                .print();
     }
 
     @Test
@@ -126,6 +180,15 @@ public class StreamTest {
 
     @Test
     public void testJoiningOperation() {
+
+        String joined = new Stream<>(numbers)
+                .map(String::valueOf)
+                .joining();
+        assertEquals("1234523", joined);
+    }
+
+    @Test
+    public void testJoiningOperationWithSeperator() {
         String joined = new Stream<>(strings)
                 .joining(",");
         assertEquals("apple,banana,cherry,date", joined);
@@ -173,6 +236,15 @@ public class StreamTest {
     }
 
     @Test
+    public void testSumOperation() {
+        int sum = new Stream<>(strings)
+                .map(String::length)
+                .sum(x-> x)
+                .intValue();
+        assertEquals(21, sum);
+    }
+
+    @Test
     public void testMaxOperation() {
         Integer max = new Stream<>(numbers)
                 .max(Integer::compareTo);
@@ -184,6 +256,13 @@ public class StreamTest {
         Double avg = new Stream<>(numbers)
                 .average(Integer::doubleValue);
         assertEquals(2.857142857142857, avg, 0.000001);
+    }
+
+    @Test
+    public void testFindOperation() {
+        Optional<Integer> first = new Stream<>(numbers)
+                .find(n -> n % 2 == 0);
+        assertTrue(first.isPresent());
     }
 
     @Test
@@ -223,5 +302,17 @@ public class StreamTest {
         Object[] array = new Stream<>(numbers)
                 .toArray();
         assertArrayEquals(numbers.toArray(), array);
+    }
+
+    @Test
+    public void testIterateOperation() {
+        List<Stream.Pair<Long, Integer>> iterated = new Stream<>(numbers)
+                .iterate()
+                .toList();
+        assertEquals(7, iterated.size());
+        for (int i = 0; i < iterated.size(); i++) {
+            assertEquals(Long.valueOf(i), iterated.get(i).key());
+            assertEquals(numbers.get(i % numbers.size()), iterated.get(i).value());
+        }
     }
 }

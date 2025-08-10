@@ -453,9 +453,10 @@ public class Stream<T> {
             if (items.isEmpty()) {
                 return Optional.empty();
             }
-            T result = items.iterator().next();
-            while (items.iterator().hasNext()) {
-                T item = items.iterator().next();
+            Iterator<T> iterator = items.iterator();
+            T result = iterator.next();
+            while (iterator.hasNext()) {
+                T item = iterator.next();
                 result = accumulator.apply(result, item);
             }
             return Optional.ofNullable(result);
@@ -541,7 +542,7 @@ public class Stream<T> {
      * @return Sum of the mapped elements
      * @throws IllegalArgumentException if mapper is null
      */
-    public Double sum(Function<T, Double> mapper) {
+    public Double sum(Function<T, Number> mapper) {
         if (mapper == null) {
             throw new IllegalArgumentException("Mapper cannot be null");
         }
@@ -549,7 +550,7 @@ public class Stream<T> {
             Iterator<T> iterator = items.iterator();
             double sum = 0.0;
             while (iterator.hasNext()) {
-                sum += mapper.apply(iterator.next());
+                sum += mapper.apply(iterator.next()).doubleValue();
             }
             return sum;
         }, this).reduce(collection);
@@ -568,7 +569,7 @@ public class Stream<T> {
      * @return Average value of the mapped elements
      * @throws IllegalArgumentException if mapper is null
      */
-    public Double average(Function<T, Double> mapper) {
+    public Double average(Function<T, Number> mapper) {
         if (mapper == null) {
             throw new IllegalArgumentException("Mapper cannot be null");
         }
@@ -577,7 +578,7 @@ public class Stream<T> {
             double sum = 0.0;
             long count = 0;
             while (iterator.hasNext()) {
-                sum += mapper.apply(iterator.next());
+                sum += mapper.apply(iterator.next()).doubleValue();
                 count++;
             }
             return count == 0 ? 0.0 : sum / count;
@@ -858,7 +859,7 @@ public class Stream<T> {
             throw new IllegalArgumentException("KeyMapper, ValueMapper and MapClass cannot be null");
         }
         return toMap(keyMapper, valueMapper, (a, b) -> {
-            throw new IllegalStateException("Duplicate key found for " + keyMapper.apply(a) + " and " + keyMapper.apply(b));
+            throw new IllegalStateException("Duplicate key found with values " + a + " and " + b);
         }, mapClass);
     }
 
@@ -879,7 +880,7 @@ public class Stream<T> {
      * @return Map containing elements from the stream
      * @throws IllegalArgumentException if any parameter is null
      */
-    public <K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<T, T, T> accumulator) {
+    public <K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<V, V, V> accumulator) {
         if (keyMapper == null || valueMapper == null || accumulator == null) {
             throw new IllegalArgumentException("KeyMapper, ValueMapper and Accumulator cannot be null");
         }
@@ -907,7 +908,7 @@ public class Stream<T> {
      * @throws IllegalArgumentException if any parameter is null
      */
     @SuppressWarnings("unchecked")
-    public <M extends Map<?, ?>, K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<T, T, T> accumulator, Class<M> mapClass) {
+    public <M extends Map<?, ?>, K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<V, V, V> accumulator, Class<M> mapClass) {
         if (keyMapper == null || valueMapper == null || accumulator == null || mapClass == null) {
             throw new IllegalArgumentException("KeyMapper, ValueMapper, Accumulator and MapClass cannot be null");
         }
@@ -921,7 +922,7 @@ public class Stream<T> {
                         if (v == null) {
                             return value;
                         } else {
-                            return (V) accumulator.apply((T) v, item);
+                            return accumulator.apply(v, valueMapper.apply(item));
                         }
                     });
                 }
@@ -1016,6 +1017,7 @@ public class Stream<T> {
      *
      * @return Array containing all elements in the stream
      */
+    @SuppressWarnings("unchecked")
     public T[] toArray() {
         if (collection.isEmpty()) {
             return (T[]) new Object[0]; // Return empty array if collection is empty

@@ -1,19 +1,14 @@
 package org.example.streams;
 
+import lombok.Getter;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
-public class ReducePipeline<IN, OUT> {
-    private final List<TransformPipeline<?, ?>> transformPipelines;
-    private final Function<Collection<IN>, OUT> reduceFunction;
-    private final Stream<IN> stream;
-
-    public ReducePipeline(List<TransformPipeline<?, ?>> transformPipelines, Function<Collection<IN>, OUT> reduceFunction, Stream<IN> stream) {
-        this.transformPipelines = transformPipelines;
-        this.reduceFunction = reduceFunction;
-        this.stream = stream;
-    }
+@Getter
+public record ReducePipeline<IN, OUT>(List<TransformPipeline<?, ?>> transformPipelines,
+                                      Function<Collection<IN>, OUT> reduceFunction, Stream<IN> stream) {
 
     @SuppressWarnings("unchecked")
     public OUT reduce(Collection<?> collection) {
