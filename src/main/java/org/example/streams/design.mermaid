@@ -1,0 +1,59 @@
+classDiagram
+    class Stream~T~ {
+        -Collection<?> collection
+        -List<TransformPipeline<?, ?>> transformPipelines
+        -boolean isParallel
+        -ExecutorService userProvdedExecutorService
+        +filter(Predicate<T>)$ Stream<T>
+        +map(Function<T,U>)$ Stream<U>
+        +flatMap(Function<T,Stream<U>>)$ Stream<U>
+        +distinct() Stream<T>
+        +sorted() Stream<T>
+        +limit(int) Stream<T>
+        +skip(int) Stream<T>
+        +peek(Consumer<T>) Stream<T>
+        +reduce(BiFunction<T,T,T>, T) T
+        +forEach(Consumer<T>) void
+        +toList() List<T>
+        +toSet() Set<T>
+        +toMap() Map<K,V>
+        +count() long
+    }
+
+    class TransformPipeline~I,O~ {
+-Function<Collection<I>, Collection<O>> transformer
++transform(Collection<I>) Collection<O>
+}
+
+class ReducePipeline~I,O~ {
+-List<TransformPipeline<?,?>> transformPipelines
+-Function<Collection<I>,O> reducer
++reduce(Collection<?>) O
+}
+
+class AbstractStreamFuture~T~ {
+<<abstract>>
++get() T
+    }
+
+class SimpleFuture~T~ {
+-T value
++get() T
+    }
+
+class ParallelFuture~T~ {
+-Future<T> future
++get() T
+}
+
+class Pair~K,V~ {
+-K key
+-V value
+}
+
+Stream --> TransformPipeline : uses
+Stream --> ReducePipeline : uses
+Stream --> AbstractStreamFuture : uses
+AbstractStreamFuture <|-- SimpleFuture
+AbstractStreamFuture <|-- ParallelFuture
+Stream --> Pair : contains
