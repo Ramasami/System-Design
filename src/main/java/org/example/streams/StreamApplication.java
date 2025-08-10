@@ -1,5 +1,7 @@
 package org.example.streams;
 
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -16,5 +18,11 @@ public class StreamApplication {
                     }
                 }, 100)
                 .forEach(System.out::println);
+
+
+        for (Iterator<String> it = new Stream<>(Arrays.asList("apple", "banana", "cherry")).iterator(); it.hasNext(); ) {
+            String fruit = it.next();
+            System. out. println(fruit);
+        }
     }
 }
