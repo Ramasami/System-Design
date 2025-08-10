@@ -11,9 +11,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * A custom implementation of a Stream-like processing library that supports both sequential
+ * and parallel operations on collections.
+ *
+ * @param <T> The type of elements in the stream
+ */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Stream<T> {
 
+    /** Default thread pool for parallel operations */
     private static final ExecutorService executorService = Executors.newFixedThreadPool(8);
     private final Collection<?> collection;
     private final List<TransformPipeline<?, ?>> transformPipelines;
@@ -28,11 +35,17 @@ public class Stream<T> {
     }
 
     private <U> Stream<U> appendPipeline(TransformPipeline<T, U> transformPipeline) {
+        if (transformPipeline == null) {
+            throw new IllegalArgumentException("TransformPipeline cannot be null");
+        }
         transformPipelines.add(transformPipeline);
         return new Stream<>(collection, transformPipelines, isParallel, userProvidedExecutorService);
     }
 
     public Stream<T> filter(Predicate<T> predicate) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
             List<T> filtered = new ArrayList<>();
             List<Pair<T, AbstractStreamFuture<Boolean>>> futures = new ArrayList<>();
@@ -50,6 +63,9 @@ public class Stream<T> {
     }
 
     public <U> Stream<U> map(Function<T, U> mapper) {
+        if (mapper == null) {
+            throw new IllegalArgumentException("Mapper cannot be null");
+        }
         TransformPipeline<T, U> transformPipeline = new TransformPipeline<>(items -> {
             List<U> mapped = new ArrayList<>();
             List<AbstractStreamFuture<U>> futures = new ArrayList<>();
@@ -77,6 +93,9 @@ public class Stream<T> {
     }
 
     public <U> Stream<U> flatMap(Function<T, Stream<U>> flatMapper) {
+        if (flatMapper == null) {
+            throw new IllegalArgumentException("FlatMapper cannot be null");
+        }
         TransformPipeline<T, U> transformPipeline = new TransformPipeline<>(items -> {
             List<U> flatMapped = new ArrayList<>();
             List<AbstractStreamFuture<Stream<U>>> futures = new ArrayList<>();
@@ -94,6 +113,9 @@ public class Stream<T> {
     }
 
     public Stream<T> peek(Consumer<T> consumer) {
+        if (consumer == null) {
+            throw new IllegalArgumentException("Consumer cannot be null");
+        }
         return map(item -> {
             consumer.accept(item);
             return item;
@@ -105,6 +127,9 @@ public class Stream<T> {
     }
 
     public Stream<T> sorted(Comparator<T> comparator) {
+        if (comparator == null) {
+            throw new IllegalArgumentException("Comparator cannot be null");
+        }
         TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
             List<T> sorted = new ArrayList<>(items);
             sorted.sort(comparator);
@@ -127,6 +152,11 @@ public class Stream<T> {
     }
 
     public Stream<T> skip(int i) {
+        if (i < 0) {
+            throw new IllegalArgumentException("Skip count cannot be negative");
+        } else if (i == 0) {
+            return this; // No need to skip anything
+        }
         TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
             List<T> skipped = new ArrayList<>();
             int count = 0;
@@ -141,6 +171,11 @@ public class Stream<T> {
     }
 
     public Stream<T> limit(int i) {
+        if (i < 0) {
+            throw new IllegalArgumentException("Limit count cannot be negative");
+        } else if (i == 0) {
+            return new Stream<>(Collections.emptyList(), transformPipelines, isParallel, userProvidedExecutorService); // Return empty stream
+        }
         TransformPipeline<T, T> transformPipeline = new TransformPipeline<>(items -> {
             List<T> limited = new ArrayList<>();
             int count = 0;
@@ -157,6 +192,9 @@ public class Stream<T> {
     }
 
     public T reduce(BiFunction<T, T, T> accumulator, T identity) {
+        if (accumulator == null) {
+            throw new IllegalArgumentException("Accumulator cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             T result = identity;
             for (T item : items) {
@@ -167,6 +205,9 @@ public class Stream<T> {
     }
 
     public Optional<T> reduce(BiFunction<T, T, T> accumulator) {
+        if (accumulator == null) {
+            throw new IllegalArgumentException("Accumulator cannot be null");
+        }
         return new ReducePipeline<T, Optional<T>>(transformPipelines, items -> {
             if (items.isEmpty()) {
                 return Optional.empty();
@@ -185,6 +226,9 @@ public class Stream<T> {
     }
 
     public T max(Comparator<T> comparator) {
+        if (comparator == null) {
+            throw new IllegalArgumentException("Comparator cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             if (items.isEmpty()) {
                 return null;
@@ -200,6 +244,9 @@ public class Stream<T> {
     }
 
     public T min(Comparator<T> comparator) {
+        if (comparator == null) {
+            throw new IllegalArgumentException("Comparator cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             if (items.isEmpty()) {
                 return null;
@@ -215,6 +262,9 @@ public class Stream<T> {
     }
 
     public Double sum(Function<T, Double> mapper) {
+        if (mapper == null) {
+            throw new IllegalArgumentException("Mapper cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             Iterator<T> iterator = items.iterator();
             double sum = 0.0;
@@ -226,6 +276,9 @@ public class Stream<T> {
     }
 
     public Double average(Function<T, Double> mapper) {
+        if (mapper == null) {
+            throw new IllegalArgumentException("Mapper cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             Iterator<T> iterator = items.iterator();
             double sum = 0.0;
@@ -239,6 +292,9 @@ public class Stream<T> {
     }
 
     public Optional<T> find(Predicate<T> predicate) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         return new ReducePipeline<T, Optional<T>>(transformPipelines, items -> {
             List<Pair<T, AbstractStreamFuture<Boolean>>> futures = new ArrayList<>();
             for (T item : items) {
@@ -254,6 +310,9 @@ public class Stream<T> {
     }
 
     public void forEach(Consumer<T> consumer) {
+        if (consumer == null) {
+            throw new IllegalArgumentException("Consumer cannot be null");
+        }
         new ReducePipeline<T, Void>(transformPipelines, items -> {
             List<AbstractStreamFuture<Void>> futures = new ArrayList<>();
             for (T item : items) {
@@ -267,6 +326,9 @@ public class Stream<T> {
     }
 
     public boolean anyMatch(Predicate<T> predicate) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
@@ -282,6 +344,9 @@ public class Stream<T> {
     }
 
     public boolean allMatch(Predicate<T> predicate) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
@@ -297,6 +362,9 @@ public class Stream<T> {
     }
 
     public boolean noneMatch(Predicate<T> predicate) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
@@ -317,6 +385,9 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <L extends List<?>> List<T> toList(Class<L> clazz) {
+        if (clazz == null) {
+            throw new IllegalArgumentException("List class cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 List<T> list = (List<T>) clazz.getDeclaredConstructor().newInstance();
@@ -334,6 +405,9 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <S extends Set<?>> Set<T> toSet(Class<S> clazz) {
+        if (clazz == null) {
+            throw new IllegalArgumentException("Set class cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Set<T> list = (Set<T>) clazz.getDeclaredConstructor().newInstance();
@@ -346,21 +420,33 @@ public class Stream<T> {
     }
 
     public <K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper) {
+        if (keyMapper == null || valueMapper == null) {
+            throw new IllegalArgumentException("KeyMapper and ValueMapper cannot be null");
+        }
         return toMap(keyMapper, valueMapper, HashMap.class);
     }
 
     public <M extends Map<?, ?>, K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, Class<M> mapClass) {
+        if (keyMapper == null || valueMapper == null || mapClass == null) {
+            throw new IllegalArgumentException("KeyMapper, ValueMapper and MapClass cannot be null");
+        }
         return toMap(keyMapper, valueMapper, (a, b) -> {
             throw new IllegalStateException("Duplicate key found for " + keyMapper.apply(a) + " and " + keyMapper.apply(b));
         }, mapClass);
     }
 
     public <K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<T, T, T> accumulator) {
+        if (keyMapper == null || valueMapper == null || accumulator == null) {
+            throw new IllegalArgumentException("KeyMapper, ValueMapper and Accumulator cannot be null");
+        }
         return toMap(keyMapper, valueMapper, accumulator, HashMap.class);
     }
 
     @SuppressWarnings("unchecked")
     public <M extends Map<?, ?>, K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<T, T, T> accumulator, Class<M> mapClass) {
+        if (keyMapper == null || valueMapper == null || accumulator == null || mapClass == null) {
+            throw new IllegalArgumentException("KeyMapper, ValueMapper, Accumulator and MapClass cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Map<K, V> map = (Map<K, V>) mapClass.getDeclaredConstructor().newInstance();
@@ -384,11 +470,17 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <K, V> Map<K, List<V>> toGroupedMap(Function<T, K> keyMapper, Function<T, V> valueMapper) {
+        if (keyMapper == null || valueMapper == null) {
+            throw new IllegalArgumentException("KeyMapper and ValueMapper cannot be null");
+        }
         return (Map) toGroupedMap(keyMapper, valueMapper, HashMap.class, ArrayList.class);
     }
 
     @SuppressWarnings("unchecked")
     public <M extends Map<?, ?>, C extends Collection<?>, K, V> Map<K, Collection<V>> toGroupedMap(Function<T, K> keyMapper, Function<T, V> valueMapper, Class<M> mapClass, Class<C> collectionClass) {
+        if (keyMapper == null || valueMapper == null || mapClass == null || collectionClass == null) {
+            throw new IllegalArgumentException("KeyMapper, ValueMapper, MapClass and CollectionClass cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Map<K, Collection<V>> map = (Map<K, Collection<V>>) mapClass.getDeclaredConstructor().newInstance();
@@ -412,6 +504,9 @@ public class Stream<T> {
     }
 
     public T[] toArray() {
+        if (collection.isEmpty()) {
+            return (T[]) new Object[0]; // Return empty array if collection is empty
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             @SuppressWarnings("unchecked")
             T[] array = (T[]) new Object[items.size()];
@@ -434,6 +529,9 @@ public class Stream<T> {
     }
 
     public String joining(String separator) {
+        if (separator == null) {
+            throw new IllegalArgumentException("Separator cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, items -> {
             StringBuilder sb = new StringBuilder();
             Iterator<T> iterator = items.iterator();
@@ -448,6 +546,9 @@ public class Stream<T> {
     }
 
     public Iterator<T> iterator() {
+        if (collection == null) {
+            throw new NullPointerException("Collection cannot be null");
+        }
         return new ReducePipeline<>(transformPipelines, Collection::iterator, this).reduce(collection);
     }
 
@@ -464,6 +565,9 @@ public class Stream<T> {
     }
 
     public Stream<T> parallel(ExecutorService executorService) {
+        if (executorService == null) {
+            throw new IllegalArgumentException("ExecutorService cannot be null");
+        }
         return new Stream<>(collection, transformPipelines, true, executorService);
     }
 
@@ -472,10 +576,16 @@ public class Stream<T> {
     }
 
     private AbstractStreamFuture<Boolean> execute(Predicate<T> predicate, T item) {
+        if (predicate == null) {
+            throw new IllegalArgumentException("Predicate cannot be null");
+        }
         return execute((Function<T, Boolean>) t -> predicate.test(item), item);
     }
 
     private <U> AbstractStreamFuture<U> execute(Function<T, U> mapper, T item) {
+        if (mapper == null) {
+            throw new IllegalArgumentException("Mapper cannot be null");
+        }
         if (!isParallel) {
             return new SimpleFuture<>(mapper.apply(item));
         } else
@@ -484,6 +594,9 @@ public class Stream<T> {
     }
 
     private AbstractStreamFuture<Void> execute(Consumer<T> consumer, T item) {
+        if (consumer == null) {
+            throw new IllegalArgumentException("Consumer cannot be null");
+        }
         return execute((Function<T, Void>) t -> {
             consumer.accept(item);
             return null;
