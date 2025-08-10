@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 /**
  * A custom implementation of a Stream-like processing library that supports both sequential
  * and parallel operations on collections.
- *
+ * <p>
  * Example usage:
  * <pre>
  * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4, 5))
@@ -70,7 +70,7 @@ public class Stream<T> {
 
     /**
      * Filters elements based on the given predicate
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4))
@@ -103,7 +103,7 @@ public class Stream<T> {
 
     /**
      * Maps elements to new values using the provided function
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<String> stream = new Stream<>(Arrays.asList(1, 2, 3))
@@ -134,7 +134,7 @@ public class Stream<T> {
 
     /**
      * Iterates over the stream and returns a stream of pairs containing the index and the element
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Pair<Long, Integer>> indexed = new Stream<>(Arrays.asList(1, 2, 3))
@@ -157,7 +157,7 @@ public class Stream<T> {
 
     /**
      * Flattens nested streams into a single stream
-     *
+     * <p>
      * Example:
      * <pre>
      * List<List<Integer>> nested = Arrays.asList(
@@ -194,7 +194,7 @@ public class Stream<T> {
 
     /**
      * Peeks at each element in the stream and applies the given consumer
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3))
@@ -217,7 +217,7 @@ public class Stream<T> {
 
     /**
      * Returns a stream sorted in natural order
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(3, 1, 4, 2))
@@ -232,7 +232,7 @@ public class Stream<T> {
 
     /**
      * Returns a stream sorted according to the provided comparator
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(3, 1, 4, 2))
@@ -253,7 +253,7 @@ public class Stream<T> {
 
     /**
      * Returns a stream with distinct elements
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 2, 3, 4, 4))
@@ -277,7 +277,7 @@ public class Stream<T> {
 
     /**
      * Skips the first i elements in the stream
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4, 5))
@@ -289,7 +289,7 @@ public class Stream<T> {
      */
     public Stream<T> skip(int i) {
         if (i < 0) {
-            skipLast(-i);
+            return skipLast(-i);
         } else if (i == 0) {
             return this; // No need to skip anything
         }
@@ -308,7 +308,7 @@ public class Stream<T> {
 
     /**
      * Skips the last i elements in the stream
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4, 5))
@@ -340,7 +340,7 @@ public class Stream<T> {
 
     /**
      * Limits the first i elements in the stream
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4, 5))
@@ -373,7 +373,7 @@ public class Stream<T> {
 
     /**
      * Limits the last i elements in the stream
-     *
+     * <p>
      * Example:
      * <pre>
      * Stream<Integer> stream = new Stream<>(Arrays.asList(1, 2, 3, 4, 5))
@@ -406,7 +406,7 @@ public class Stream<T> {
     /**
      * Reduces stream elements to a single value using an accumulator function
      * and returns the result
-     *
+     * <p>
      * Example:
      * <pre>
      * Integer sum = new Stream<>(Arrays.asList(1, 2, 3, 4))
@@ -434,7 +434,7 @@ public class Stream<T> {
     /**
      * Reduces stream elements to a single value using an accumulator function
      * and returns an Optional result
-     *
+     * <p>
      * Example:
      * <pre>
      * Optional<Integer> sum = new Stream<>(Arrays.asList(1, 2, 3, 4))
@@ -468,7 +468,7 @@ public class Stream<T> {
 
     /**
      * Finds the maximum element using the provided comparator
-     *
+     * <p>
      * Example:
      * <pre>
      * Integer max = new Stream<>(Arrays.asList(1, 2, 3))
@@ -499,7 +499,7 @@ public class Stream<T> {
 
     /**
      * Finds the minimum element in the stream using the provided comparator
-     *
+     * <p>
      * Example:
      * <pre>
      * Integer min = new Stream<>(Arrays.asList(3, 1, 4, 2))
@@ -530,7 +530,7 @@ public class Stream<T> {
 
     /**
      * Calculates the sum of elements using the provided mapper function
-     *
+     * <p>
      * Example:
      * <pre>
      * Double sum = new Stream<>(Arrays.asList(1.0, 2.0, 3.0))
@@ -557,7 +557,7 @@ public class Stream<T> {
 
     /**
      * Calculates the average of elements using the provided mapper function
-     *
+     * <p>
      * Example:
      * <pre>
      * Double average = new Stream<>(Arrays.asList(1.0, 2.0, 3.0))
@@ -586,7 +586,7 @@ public class Stream<T> {
 
     /**
      * Finds the first element that matches the given predicate
-     *
+     * <p>
      * Example:
      * <pre>
      * Optional<Integer> firstEven = new Stream<>(Arrays.asList(1, 2, 3, 4))
@@ -617,7 +617,7 @@ public class Stream<T> {
 
     /**
      * Executes a consumer for each element in the stream
-     *
+     * <p>
      * Example:
      * <pre>
      * new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -645,7 +645,7 @@ public class Stream<T> {
 
     /**
      * Checks if any element matches the given predicate
-     *
+     * <p>
      * Example:
      * <pre>
      * boolean hasEven = new Stream<>(Arrays.asList(1, 2, 3))
@@ -676,7 +676,7 @@ public class Stream<T> {
 
     /**
      * Checks if all elements match the given predicate
-     *
+     * <p>
      * Example:
      * <pre>
      * boolean allEven = new Stream<>(Arrays.asList(2, 4, 6))
@@ -707,7 +707,7 @@ public class Stream<T> {
 
     /**
      * Checks if no elements match the given predicate
-     *
+     * <p>
      * Example:
      * <pre>
      * boolean noneEven = new Stream<>(Arrays.asList(1, 3, 5))
@@ -742,7 +742,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a list
-     *
+     * <p>
      * Example:
      * <pre>
      * List<String> list = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -770,7 +770,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a set
-     *
+     * <p>
      * Example:
      * <pre>
      * Set<String> set = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -785,7 +785,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a set
-     *
+     * <p>
      * Example:
      * <pre>
      * Set<String> set = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -813,7 +813,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a map with specified key and value mappers
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, String> map = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -837,7 +837,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a map with specified key and value mappers
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, String> map = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -864,7 +864,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a map with specified key and value mappers
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, String> map = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -888,7 +888,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to a map with specified key and value mappers and an accumulator for duplicate keys
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, String> map = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -934,7 +934,7 @@ public class Stream<T> {
 
     /**
      * Groups elements by key into a map
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, List<String>> grouped = new Stream<>(Arrays.asList("a", "bb", "ccc"))
@@ -959,7 +959,7 @@ public class Stream<T> {
 
     /**
      * Groups elements by key into a map with specified map and collection types
-     *
+     * <p>
      * Example:
      * <pre>
      * Map<Integer, Set<String>> grouped = new Stream<>(Arrays.asList("a", "bb", "ccc"))
@@ -1007,7 +1007,7 @@ public class Stream<T> {
 
     /**
      * Converts the stream to an array
-     *
+     * <p>
      * Example:
      * <pre>
      * String[] array = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -1033,7 +1033,7 @@ public class Stream<T> {
 
     /**
      * Joins elements into a single string
-     *
+     * <p>
      * Example:
      * <pre>
      * String joined = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -1054,7 +1054,7 @@ public class Stream<T> {
 
     /**
      * Joins elements into a single string with a specified separator
-     *
+     * <p>
      * Example:
      * <pre>
      * String joined = new Stream<>(Arrays.asList("apple", "banana", "cherry"))
@@ -1085,7 +1085,7 @@ public class Stream<T> {
     /**
      * Returns an iterator over the elements in the stream
      * This method is used to iterate through the stream elements
-     *
+     * <p>
      * Example:
      * <pre>
      * for (Iterator<String> it = new Stream<>(Arrays.asList("apple", "banana", "cherry")).iterator(); it.hasNext(); ) {
@@ -1132,7 +1132,7 @@ public class Stream<T> {
 
     /**
      * Executes stream operations in parallel using a thread pool
-     *
+     * <p>
      * Example:
      * <pre>
      * List<Integer> result = new Stream<>(Arrays.asList(1, 2, 3, 4))
@@ -1149,7 +1149,7 @@ public class Stream<T> {
 
     /**
      * Executes stream operations in parallel using a user-provided executor service
-     *
+     * <p>
      * Example:
      * <pre>
      * ExecutorService executor = Executors.newFixedThreadPool(4);
@@ -1171,7 +1171,7 @@ public class Stream<T> {
 
     /**
      * Executes stream operations sequentially
-     *
+     * <p>
      * Example:
      * <pre>
      * List<Integer> result = new Stream<>(Arrays.asList(1, 2, 3, 4))
