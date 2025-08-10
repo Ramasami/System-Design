@@ -2,7 +2,6 @@ package org.example.streams;
 
 import lombok.AllArgsConstructor;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @AllArgsConstructor

@@ -66,7 +66,7 @@ public class StreamsUtils {
         return stream(rangeList);
     }
 
-    public static<T>  Stream<T> subscriberStream(Supplier<T> supplier, int size) {
+    public static <T> Stream<T> subscriberStream(Supplier<T> supplier, int size) {
         if (supplier == null) {
             throw new IllegalArgumentException("Consumer cannot be null");
         }
@@ -74,7 +74,7 @@ public class StreamsUtils {
                 .map(i -> supplier.get());
     }
 
-    public static<T>  Stream<T> subscriberParallelStream(Supplier<T> supplier, int size) {
+    public static <T> Stream<T> subscriberParallelStream(Supplier<T> supplier, int size) {
         if (supplier == null) {
             throw new IllegalArgumentException("Consumer cannot be null");
         }

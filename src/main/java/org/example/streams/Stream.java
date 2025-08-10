@@ -14,20 +14,22 @@ import java.util.function.Predicate;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Stream<T> {
 
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(8);
     private final Collection<?> collection;
     private final List<TransformPipeline<?, ?>> transformPipelines;
     private final boolean isParallel;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(8);
+    private final ExecutorService userProvdedExecutorService;
 
     public Stream(Collection<T> collection) {
         this.collection = new ArrayList<>(collection);
         this.transformPipelines = new ArrayList<>();
         this.isParallel = false;
+        this.userProvdedExecutorService = null;
     }
 
     private <U> Stream<U> appendPipeline(TransformPipeline<T, U> transformPipeline) {
         transformPipelines.add(transformPipeline);
-        return new Stream<>(collection, transformPipelines, isParallel);
+        return new Stream<>(collection, transformPipelines, isParallel, userProvdedExecutorService);
     }
 
     public Stream<T> filter(Predicate<T> predicate) {
@@ -458,24 +460,26 @@ public class Stream<T> {
     }
 
     public Stream<T> parallel() {
-        return new Stream<>(collection, transformPipelines, true);
+        return new Stream<>(collection, transformPipelines, true, null);
+    }
+
+    public Stream<T> parallel(ExecutorService executorService) {
+        return new Stream<>(collection, transformPipelines, true, executorService);
     }
 
     public Stream<T> sequential() {
-        return new Stream<>(collection, transformPipelines, false);
+        return new Stream<>(collection, transformPipelines, false, null);
     }
 
     private AbstractStreamFuture<Boolean> execute(Predicate<T> predicate, T item) {
-        if (!isParallel) {
-            return new SimpleFuture<>(predicate.test(item));
-        } else {
-            return new ParallelFuture<>(executorService.submit(() -> predicate.test(item)));
-        }
+        return execute((Function<T, Boolean>) t -> predicate.test(item), item);
     }
 
     private <U> AbstractStreamFuture<U> execute(Function<T, U> mapper, T item) {
         if (!isParallel) {
             return new SimpleFuture<>(mapper.apply(item));
+        } else if (userProvdedExecutorService != null) {
+            return new ParallelFuture<>(userProvdedExecutorService.submit(() -> mapper.apply(item)));
         } else {
             return new ParallelFuture<>(executorService.submit(() -> mapper.apply(item)));
         }
