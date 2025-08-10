@@ -7,10 +7,12 @@ import java.util.function.Function;
 public class ReducePipeline<IN, OUT> {
     private final List<TransformPipeline<?, ?>> transformPipelines;
     private final Function<Collection<IN>, OUT> reduceFunction;
+    private final Stream<IN> stream;
 
-    public ReducePipeline(List<TransformPipeline<?, ?>> transformPipelines, Function<Collection<IN>, OUT> reduceFunction) {
+    public ReducePipeline(List<TransformPipeline<?, ?>> transformPipelines, Function<Collection<IN>, OUT> reduceFunction, Stream<IN> stream) {
         this.transformPipelines = transformPipelines;
         this.reduceFunction = reduceFunction;
+        this.stream = stream;
     }
 
     @SuppressWarnings("unchecked")
@@ -18,6 +20,8 @@ public class ReducePipeline<IN, OUT> {
         for (TransformPipeline<?, ?> pipeline : transformPipelines) {
             collection = pipeline.apply(collection);
         }
-        return reduceFunction.apply((Collection<IN>) collection);
+        OUT result = reduceFunction.apply((Collection<IN>) collection);
+        stream.close();
+        return result;
     }
 }

@@ -18,18 +18,18 @@ public class Stream<T> {
     private final Collection<?> collection;
     private final List<TransformPipeline<?, ?>> transformPipelines;
     private final boolean isParallel;
-    private final ExecutorService userProvdedExecutorService;
+    private final ExecutorService userProvidedExecutorService;
 
     public Stream(Collection<T> collection) {
         this.collection = new ArrayList<>(collection);
         this.transformPipelines = new ArrayList<>();
         this.isParallel = false;
-        this.userProvdedExecutorService = null;
+        this.userProvidedExecutorService = null;
     }
 
     private <U> Stream<U> appendPipeline(TransformPipeline<T, U> transformPipeline) {
         transformPipelines.add(transformPipeline);
-        return new Stream<>(collection, transformPipelines, isParallel, userProvdedExecutorService);
+        return new Stream<>(collection, transformPipelines, isParallel, userProvidedExecutorService);
     }
 
     public Stream<T> filter(Predicate<T> predicate) {
@@ -163,7 +163,7 @@ public class Stream<T> {
                 result = accumulator.apply(result, item);
             }
             return result;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Optional<T> reduce(BiFunction<T, T, T> accumulator) {
@@ -177,11 +177,11 @@ public class Stream<T> {
                 result = accumulator.apply(result, item);
             }
             return Optional.ofNullable(result);
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public long count() {
-        return new ReducePipeline<T, Long>(transformPipelines, items -> (long) items.size()).reduce(collection);
+        return new ReducePipeline<T, Long>(transformPipelines, items -> (long) items.size(), this).reduce(collection);
     }
 
     public T max(Comparator<T> comparator) {
@@ -196,7 +196,7 @@ public class Stream<T> {
                 }
             }
             return maxItem;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public T min(Comparator<T> comparator) {
@@ -211,7 +211,7 @@ public class Stream<T> {
                 }
             }
             return maxItem;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Double sum(Function<T, Double> mapper) {
@@ -222,7 +222,7 @@ public class Stream<T> {
                 sum += mapper.apply(iterator.next());
             }
             return sum;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Double average(Function<T, Double> mapper) {
@@ -235,7 +235,7 @@ public class Stream<T> {
                 count++;
             }
             return count == 0 ? 0.0 : sum / count;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Optional<T> find(Predicate<T> predicate) {
@@ -250,7 +250,7 @@ public class Stream<T> {
                 }
             }
             return Optional.empty();
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public void forEach(Consumer<T> consumer) {
@@ -263,7 +263,7 @@ public class Stream<T> {
                 future.get();
             }
             return null;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public boolean anyMatch(Predicate<T> predicate) {
@@ -278,7 +278,7 @@ public class Stream<T> {
                 }
             }
             return false;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public boolean allMatch(Predicate<T> predicate) {
@@ -293,7 +293,7 @@ public class Stream<T> {
                 }
             }
             return true;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public boolean noneMatch(Predicate<T> predicate) {
@@ -308,7 +308,7 @@ public class Stream<T> {
                 }
             }
             return true;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public List<T> toList() {
@@ -325,7 +325,7 @@ public class Stream<T> {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create list of type " + clazz.getName(), e);
             }
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Set<T> toSet() {
@@ -342,7 +342,7 @@ public class Stream<T> {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create list of type " + clazz.getName(), e);
             }
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public <K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper) {
@@ -379,7 +379,7 @@ public class Stream<T> {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create map of type " + mapClass.getName(), e);
             }
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     @SuppressWarnings("unchecked")
@@ -408,7 +408,7 @@ public class Stream<T> {
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create map of type " + mapClass.getName(), e);
             }
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public T[] toArray() {
@@ -420,7 +420,7 @@ public class Stream<T> {
                 array[index++] = item;
             }
             return array;
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public String joining() {
@@ -430,7 +430,7 @@ public class Stream<T> {
                 sb.append(item.toString());
             }
             return sb.toString();
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public String joining(String separator) {
@@ -444,11 +444,11 @@ public class Stream<T> {
                 }
             }
             return sb.toString();
-        }).reduce(collection);
+        }, this).reduce(collection);
     }
 
     public Iterator<T> iterator() {
-        return new ReducePipeline<T, Iterator<T>>(transformPipelines, Collection::iterator).reduce(collection);
+        return new ReducePipeline<T, Iterator<T>>(transformPipelines, Collection::iterator, this).reduce(collection);
     }
 
     public void println() {
@@ -478,8 +478,8 @@ public class Stream<T> {
     private <U> AbstractStreamFuture<U> execute(Function<T, U> mapper, T item) {
         if (!isParallel) {
             return new SimpleFuture<>(mapper.apply(item));
-        } else if (userProvdedExecutorService != null) {
-            return new ParallelFuture<>(userProvdedExecutorService.submit(() -> mapper.apply(item)));
+        } else if (userProvidedExecutorService != null) {
+            return new ParallelFuture<>(userProvidedExecutorService.submit(() -> mapper.apply(item)));
         } else {
             return new ParallelFuture<>(executorService.submit(() -> mapper.apply(item)));
         }
@@ -498,5 +498,12 @@ public class Stream<T> {
     }
 
     public record Pair<K, V>(K key, V value) {
+    }
+
+    // Add cleanup method
+    public void close() {
+        if (userProvidedExecutorService != null) {
+            userProvidedExecutorService.shutdown();
+        }
     }
 }
