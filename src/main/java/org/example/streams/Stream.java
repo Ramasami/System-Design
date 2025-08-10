@@ -157,7 +157,7 @@ public class Stream<T> {
     }
 
     public T reduce(BiFunction<T, T, T> accumulator, T identity) {
-        return new ReducePipeline<T, T>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             T result = identity;
             for (T item : items) {
                 result = accumulator.apply(result, item);
@@ -181,11 +181,11 @@ public class Stream<T> {
     }
 
     public long count() {
-        return new ReducePipeline<T, Long>(transformPipelines, items -> (long) items.size(), this).reduce(collection);
+        return new ReducePipeline<>(transformPipelines, items -> (long) items.size(), this).reduce(collection);
     }
 
     public T max(Comparator<T> comparator) {
-        return new ReducePipeline<T, T>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             if (items.isEmpty()) {
                 return null;
             }
@@ -200,7 +200,7 @@ public class Stream<T> {
     }
 
     public T min(Comparator<T> comparator) {
-        return new ReducePipeline<T, T>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             if (items.isEmpty()) {
                 return null;
             }
@@ -215,7 +215,7 @@ public class Stream<T> {
     }
 
     public Double sum(Function<T, Double> mapper) {
-        return new ReducePipeline<T, Double>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             Iterator<T> iterator = items.iterator();
             double sum = 0.0;
             while (iterator.hasNext()) {
@@ -226,7 +226,7 @@ public class Stream<T> {
     }
 
     public Double average(Function<T, Double> mapper) {
-        return new ReducePipeline<T, Double>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             Iterator<T> iterator = items.iterator();
             double sum = 0.0;
             long count = 0;
@@ -267,7 +267,7 @@ public class Stream<T> {
     }
 
     public boolean anyMatch(Predicate<T> predicate) {
-        return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
                 futures.add(execute(predicate, item));
@@ -282,7 +282,7 @@ public class Stream<T> {
     }
 
     public boolean allMatch(Predicate<T> predicate) {
-        return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
                 futures.add(execute(predicate, item));
@@ -297,7 +297,7 @@ public class Stream<T> {
     }
 
     public boolean noneMatch(Predicate<T> predicate) {
-        return new ReducePipeline<T, Boolean>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             List<AbstractStreamFuture<Boolean>> futures = new ArrayList<>();
             for (T item : items) {
                 futures.add(execute(predicate, item));
@@ -317,7 +317,7 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <L extends List<?>> List<T> toList(Class<L> clazz) {
-        return new ReducePipeline<T, List<T>>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 List<T> list = (List<T>) clazz.getDeclaredConstructor().newInstance();
                 list.addAll(items);
@@ -334,7 +334,7 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <S extends Set<?>> Set<T> toSet(Class<S> clazz) {
-        return new ReducePipeline<T, Set<T>>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Set<T> list = (Set<T>) clazz.getDeclaredConstructor().newInstance();
                 list.addAll(items);
@@ -361,7 +361,7 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <M extends Map<?, ?>, K, V> Map<K, V> toMap(Function<T, K> keyMapper, Function<T, V> valueMapper, BiFunction<T, T, T> accumulator, Class<M> mapClass) {
-        return new ReducePipeline<T, Map<K, V>>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Map<K, V> map = (Map<K, V>) mapClass.getDeclaredConstructor().newInstance();
                 for (T item : items) {
@@ -389,7 +389,7 @@ public class Stream<T> {
 
     @SuppressWarnings("unchecked")
     public <M extends Map<?, ?>, C extends Collection<?>, K, V> Map<K, Collection<V>> toGroupedMap(Function<T, K> keyMapper, Function<T, V> valueMapper, Class<M> mapClass, Class<C> collectionClass) {
-        return new ReducePipeline<T, Map<K, Collection<V>>>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             try {
                 Map<K, Collection<V>> map = (Map<K, Collection<V>>) mapClass.getDeclaredConstructor().newInstance();
                 for (T item : items) {
@@ -412,7 +412,7 @@ public class Stream<T> {
     }
 
     public T[] toArray() {
-        return new ReducePipeline<T, T[]>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             @SuppressWarnings("unchecked")
             T[] array = (T[]) new Object[items.size()];
             int index = 0;
@@ -424,7 +424,7 @@ public class Stream<T> {
     }
 
     public String joining() {
-        return new ReducePipeline<T, String>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             StringBuilder sb = new StringBuilder();
             for (T item : items) {
                 sb.append(item.toString());
@@ -434,7 +434,7 @@ public class Stream<T> {
     }
 
     public String joining(String separator) {
-        return new ReducePipeline<T, String>(transformPipelines, items -> {
+        return new ReducePipeline<>(transformPipelines, items -> {
             StringBuilder sb = new StringBuilder();
             Iterator<T> iterator = items.iterator();
             while (iterator.hasNext()) {
@@ -448,7 +448,7 @@ public class Stream<T> {
     }
 
     public Iterator<T> iterator() {
-        return new ReducePipeline<T, Iterator<T>>(transformPipelines, Collection::iterator, this).reduce(collection);
+        return new ReducePipeline<>(transformPipelines, Collection::iterator, this).reduce(collection);
     }
 
     public void println() {
@@ -478,11 +478,9 @@ public class Stream<T> {
     private <U> AbstractStreamFuture<U> execute(Function<T, U> mapper, T item) {
         if (!isParallel) {
             return new SimpleFuture<>(mapper.apply(item));
-        } else if (userProvidedExecutorService != null) {
-            return new ParallelFuture<>(userProvidedExecutorService.submit(() -> mapper.apply(item)));
-        } else {
-            return new ParallelFuture<>(executorService.submit(() -> mapper.apply(item)));
-        }
+        } else
+            return new ParallelFuture<>(Objects.requireNonNullElse(userProvidedExecutorService, executorService)
+                    .submit(() -> mapper.apply(item)));
     }
 
     private AbstractStreamFuture<Void> execute(Consumer<T> consumer, T item) {
