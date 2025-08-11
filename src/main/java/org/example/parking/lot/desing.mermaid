@@ -1,0 +1,56 @@
+classDiagram
+class ParkingLotSystem {
+-List<Level> levels
+-int totalLevels
+-ReadWriteLock lock
++ParkingLotSystem(totalLevels: int)
++addParkingSpot(level: int, vehicleType: VehicleType)
++parkVehicle(vehicle: Vehicle)
++unParkVehicle(vehicle: Vehicle)
++getFreeParkingSpotsCount(vehicleType: VehicleType)
+-validateLevel(level: int)
++close()
+}
+
+class Level {
+-int levelNumber
+-Map<VehicleType, Set<ParkingSpot>> reservedParkingSpots
+-Map<VehicleType, List<ParkingSpot>> freeParkingSpots
+-AtomicInteger spotCounter
++Level(levelNumber: int)
++addParkingSpot(vehicleType: VehicleType)
++reserveParkingSpot(vehicleType: VehicleType, vehicle: Vehicle)
++unReserveParkingSpot(spot: ParkingSpot)
++getFreeParkingSpotsCount(vehicleType: VehicleType)
+}
+
+class ParkingSpot {
+-int spotNumber
+-int levelNumber
+-VehicleType vehicleType
+-Vehicle parkedVehicle
+-AtomicBoolean isReserved
++ParkingSpot(vehicleType: VehicleType, spotNumber: int, levelNumber: int)
++reserve(vehicle: Vehicle)
++unReserve()
+}
+
+class Vehicle {
+-int vehicleNumber
+-VehicleType vehicleType
+-ParkingSpot parkingSpot
++Vehicle(vehicleType: VehicleType, vehicleNumber: int)
+}
+
+class VehicleType {
+<<enumeration>>
+CAR
+BIKE
+TRUCK
+    }
+
+ParkingLotSystem "1" *-- "*" Level
+Level "1" *-- "*" ParkingSpot
+ParkingSpot "1" -- "0..1" Vehicle
+Vehicle --> "1" VehicleType
+ParkingSpot --> "1" VehicleType
