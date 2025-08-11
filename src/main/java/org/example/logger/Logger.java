@@ -27,6 +27,10 @@ public class Logger {
     /** The class associated with this logger instance */
     private final Class<?> clazz;
 
+    public static Logger getLogger(String name) {
+        return null;
+    }
+
     /**
      * Logs a message with the specified severity level.
      *
