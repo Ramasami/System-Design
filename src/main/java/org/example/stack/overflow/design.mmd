@@ -1,117 +1,212 @@
 classDiagram
-    class StackOverFlowApplication {
-    }
+    direction LR
+
+    class StackOverFlowApplication
+
     class StackOverFlow {
-        +User createUser()
-        +Question createNewQuestion()
-        +Answer addAnswerToQuestion()
-        +Tag addTag()
-        +Comment addCommentToAnswer()
-        +void addVoteToQuestion()
-        +void addVoteToAnswer()
-        +int getVoteCountForAnswer()
-        +int getVoteCountForQuestion()
-        +boolean removeVoteFromQuestion()
-        +boolean removeVoteFromAnswer()
-        +int getUserReputation()
-        +boolean acceptAnswer()
-        +void validateUserId()
-        +void validateIds()
-        +void validateContent()
-        +void validateUsername()
+        +User createUser(username: String)
+        +Question createNewQuestion(authorId: UUID, title: String, content: String)
+        +Answer addAnswerToQuestion(authorId: UUID, questionId: UUID, content: String)
+        +Tag addTag(name: String)
+        +Comment addCommentToAnswer(authorId: UUID, answerId: UUID, content: String)
+        +void addVoteToQuestion(voterId: UUID, questionId: UUID, up: boolean)
+        +void addVoteToAnswer(voterId: UUID, answerId: UUID, up: boolean)
+        +int getVoteCountForAnswer(answerId: UUID)
+        +int getVoteCountForQuestion(questionId: UUID)
+        +boolean removeVoteFromQuestion(voterId: UUID, questionId: UUID)
+        +boolean removeVoteFromAnswer(voterId: UUID, answerId: UUID)
+        +int getUserReputation(userId: UUID)
+        +boolean acceptAnswer(questionAuthorId: UUID, answerId: UUID)
+        +void validateUserId(userId: UUID)
+        +void validateIds(ids: List<UUID>)
+        +void validateContent(text: String)
+        +void validateUsername(username: String)
     }
-    class Answer {
-        +boolean equals()
+
+    class User {
+        +UUID id
+        +String username
+        +Reputation reputation
+        +boolean equals(Object o)
         +int hashCode()
     }
-    class Tag {
-        +boolean equals()
-        +int hashCode()
-    }
+
     class Reputation {
-        +void updateReputation()
-        +void removeVote()
-        +void addVote()
+        +int score
+        +void updateReputation(delta: int)
+        +void removeVote(isUp: boolean)
+        +void addVote(isUp: boolean)
         +void handleUpVote()
         +void handleDownVote()
         +void addAcceptedAnswer()
         +void addQuestionAnswered()
         +void addQuestionAsked()
-        +void validateUserAction()
+        +void validateUserAction(action: String)
     }
-    class Vote {
-        +boolean equals()
-        +int hashCode()
-    }
-    class User {
-        +boolean equals()
-        +int hashCode()
-    }
+
     class Question {
-        +void validateId()
-        +void validateText()
-        +boolean equals()
+        +UUID id
+        +String title
+        +String content
+        +UUID authorId
+        +boolean accepted
+        +void validateId(id: UUID)
+        +void validateText(text: String)
+        +boolean equals(Object o)
         +int hashCode()
     }
+
+    class Answer {
+        +UUID id
+        +UUID questionId
+        +UUID authorId
+        +String content
+        +boolean accepted
+        +boolean equals(Object o)
+        +int hashCode()
+    }
+
     class Comment {
-        +void validateId()
-        +void validateContent()
-        +boolean equals()
+        +UUID id
+        +UUID authorId
+        +String content
+        +void validateId(id: UUID)
+        +void validateContent(text: String)
+        +boolean equals(Object o)
         +int hashCode()
     }
-    class TagService {
-        +Tag addTag()
-        +Tag getTag()
-        +void validateTagId()
-        +void validateTagName()
+
+    class Tag {
+        +UUID id
+        +String name
+        +boolean equals(Object o)
+        +int hashCode()
     }
+
+    class Vote {
+        +UUID id
+        +UUID voterId
+        +boolean up
+        +boolean equals(Object o)
+        +int hashCode()
+    }
+
     class UserService {
-        +User createUser()
-        +User getUser()
-        +boolean addQuestionToUser()
-        +List<Question> getUserQuestions()
-        +int getReputation()
-        +void validateUserId()
-        +void validateUsername()
+        +User createUser(username: String)
+        +User getUser(userId: UUID)
+        +boolean addQuestionToUser(userId: UUID, questionId: UUID)
+        +List~Question~ getUserQuestions(userId: UUID)
+        +int getReputation(userId: UUID)
+        +void validateUserId(userId: UUID)
+        +void validateUsername(username: String)
     }
-    class VoteService {
-        +void addVoteToQuestion()
-        +void addVoteToAnswer()
-        +int getVoteCountForQuestion()
-        +int getVoteCountForAnswer()
-        +boolean removeVoteFromQuestion()
-        +boolean removeVoteFromAnswer()
-        +int calculateVoteCount()
-        +void validateIds()
-    }
-    class CommentService {
-        +Comment addComment()
-        +Comment getComment()
-        +void validateCommentId()
-        +void validateContent()
-    }
-    class ReputationService {
-        +void recordVoteForUser()
-        +void recordAcceptedAnswerForUser()
-        +void recordQuestionsAsked()
-        +void recordAnswersGiven()
-    }
+
     class QuestionService {
-        +Question createNewQuestion()
-        +Question getQuestion()
-        +void addAnswerToQuestion()
-        +void addTagToQuestion()
-        +boolean isQuestionAuthor()
-        +boolean removeVoteFromQuestion()
-        +void validateQuestionId()
-        +void validateContent()
+        +Question createNewQuestion(authorId: UUID, title: String, content: String)
+        +Question getQuestion(questionId: UUID)
+        +void addAnswerToQuestion(answerId: UUID)
+        +void addTagToQuestion(questionId: UUID, tagId: UUID)
+        +boolean isQuestionAuthor(userId: UUID, questionId: UUID)
+        +boolean removeVoteFromQuestion(voterId: UUID, questionId: UUID)
+        +void validateQuestionId(id: UUID)
+        +void validateContent(text: String)
     }
+
     class AnswerService {
-        +Answer addAnswer()
-        +Answer getAnswer()
-        +boolean isAnswerToQuestion()
-        +void addCommentToAnswer()
-        +boolean acceptAnswer()
-        +void validateAnswerId()
-        +void validateContent()
+        +Answer addAnswer(questionId: UUID, authorId: UUID, content: String)
+        +Answer getAnswer(answerId: UUID)
+        +boolean isAnswerToQuestion(answerId: UUID, questionId: UUID)
+        +void addCommentToAnswer(answerId: UUID, commentId: UUID)
+        +boolean acceptAnswer(questionAuthorId: UUID, answerId: UUID)
+        +void validateAnswerId(id: UUID)
+        +void validateContent(text: String)
     }
+
+    class CommentService {
+        +Comment addComment(authorId: UUID, content: String)
+        +Comment getComment(commentId: UUID)
+        +void validateCommentId(id: UUID)
+        +void validateContent(text: String)
+    }
+
+    class TagService {
+        +Tag addTag(name: String)
+        +Tag getTag(tagId: UUID)
+        +void validateTagId(id: UUID)
+        +void validateTagName(name: String)
+    }
+
+    class VoteService {
+        +void addVoteToQuestion(voterId: UUID, questionId: UUID, up: boolean)
+        +void addVoteToAnswer(voterId: UUID, answerId: UUID, up: boolean)
+        +int getVoteCountForQuestion(questionId: UUID)
+        +int getVoteCountForAnswer(answerId: UUID)
+        +boolean removeVoteFromQuestion(voterId: UUID, questionId: UUID)
+        +boolean removeVoteFromAnswer(voterId: UUID, answerId: UUID)
+        +int calculateVoteCount(entityId: UUID)
+        +void validateIds(ids: List~UUID~)
+    }
+
+    class ReputationService {
+        +void recordVoteForUser(userId: UUID, up: boolean)
+        +void recordAcceptedAnswerForUser(userId: UUID)
+        +void recordQuestionsAsked(userId: UUID)
+        +void recordAnswersGiven(userId: UUID)
+    }
+
+%% Relationships (core domain)
+    User "1" --> "1" Reputation : has
+    User "1" --> "0..*" Question : asks
+    User "1" --> "0..*" Answer : writes
+    User "1" --> "0..*" Comment : writes
+    User "1" --> "0..*" Vote : casts
+
+    Question "1" --> "0..*" Answer : has
+    Question "1" --> "0..*" Comment : has
+    Question "1" --> "0..*" Vote : receives
+    Question "1" --> "0..*" Tag : tagged with
+    Question "1" --> "1" User : author
+
+    Answer "1" --> "0..*" Comment : has
+    Answer "1" --> "0..*" Vote : receives
+    Answer "1" --> "1" Question : for
+    Answer "1" --> "1" User : author
+
+    Comment "1" --> "1" User : author
+
+    Vote "1" --> "1" User : voter
+    Vote "0..*" --> "0..1" Question : on
+    Vote "0..*" --> "0..1" Answer : on
+
+%% Facade to services
+    StackOverFlowApplication ..> StackOverFlow : starts
+
+    StackOverFlow ..> UserService
+    StackOverFlow ..> QuestionService
+    StackOverFlow ..> AnswerService
+    StackOverFlow ..> CommentService
+    StackOverFlow ..> TagService
+    StackOverFlow ..> VoteService
+    StackOverFlow ..> ReputationService
+
+%% Services use domain entities
+    UserService ..> User
+    UserService ..> Question
+    UserService ..> Reputation
+
+    QuestionService ..> Question
+    QuestionService ..> Answer
+    QuestionService ..> Tag
+    QuestionService ..> Vote
+
+    AnswerService ..> Answer
+    AnswerService ..> Comment
+    AnswerService ..> Vote
+    AnswerService ..> Question
+
+    CommentService ..> Comment
+    TagService ..> Tag
+    VoteService ..> Vote
+    VoteService ..> Question
+    VoteService ..> Answer
+    ReputationService ..> Reputation
