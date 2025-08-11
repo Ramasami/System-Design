@@ -1,20 +1,30 @@
 package org.example.stack.overflow.service;
 
-import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.example.stack.overflow.model.Question;
 import org.example.stack.overflow.model.User;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class UserService {
-    private static UserService instance;
-    private final AtomicInteger userIdCounter = new AtomicInteger(0);
-    private final Map<Integer, User> users = new ConcurrentHashMap<>();
-    private final Map<Integer, List<Question>> userQuestions = new ConcurrentHashMap<>();
+    private static final Logger logger = Logger.getLogger(UserService.class.getName());
+    private static volatile UserService instance;
+
+    private final AtomicInteger userIdCounter;
+    private final Map<Integer, User> users;
+    private final Map<Integer, List<Question>> userQuestions;
+
+    private UserService() {
+        this.userIdCounter = new AtomicInteger(0);
+        this.users = new ConcurrentHashMap<>();
+        this.userQuestions = new ConcurrentHashMap<>();
+    }
 
     public static UserService getInstance() {
         if (instance == null) {
@@ -27,50 +37,54 @@ public class UserService {
         return instance;
     }
 
-    public User createUser(String username) {
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("Username cannot be null or empty");
-        }
+    public User createUser(@NonNull String username) {
+        validateUsername(username);
         int userId = userIdCounter.incrementAndGet();
         User user = new User(userId, username);
         users.put(userId, user);
+        logger.info(() -> String.format("Created user: %s with ID: %d", username, userId));
         return user;
     }
 
     public User getUser(int userId) {
-        if (userId <= 0) {
-            throw new IllegalArgumentException("User ID must be positive");
+        validateUserId(userId);
+        User user = users.get(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found with ID: " + userId);
         }
-        return users.get(userId);
+        return user;
     }
 
-    public boolean userExists(int userId) {
-        return getUser(userId) != null;
-    }
-
-    public boolean addQuestionToUser(int userId, Question question) {
-        if (!userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        if (question == null) {
-            throw new IllegalArgumentException("Question cannot be null");
-        }
-        userQuestions.computeIfAbsent(userId, k -> new java.util.ArrayList<>()).add(question);
+    public boolean addQuestionToUser(int userId, @NonNull Question question) {
+        User user = getUser(userId);
+        userQuestions.computeIfAbsent(userId, k -> Collections.synchronizedList(new ArrayList<>()))
+                .add(question);
+        logger.info(() -> String.format("Added question ID: %d to user ID: %d",
+                question.getQuestionId(), userId));
         return true;
     }
 
     public List<Question> getUserQuestions(int userId) {
-        if (!userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        return userQuestions.getOrDefault(userId, new java.util.ArrayList<>());
+        getUser(userId); // Validate user exists
+        return Collections.unmodifiableList(
+                userQuestions.getOrDefault(userId, Collections.emptyList())
+        );
     }
 
     public int getReputation(int userId) {
-        if (!userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
         User user = getUser(userId);
         return user.getReputation().getReputation().get();
+    }
+
+    private void validateUserId(int userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("User ID must be positive");
+        }
+    }
+
+    private void validateUsername(String username) {
+        if (username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
     }
 }

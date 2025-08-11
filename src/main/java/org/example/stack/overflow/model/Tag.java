@@ -1,11 +1,14 @@
 package org.example.stack.overflow.model;
 
+import lombok.Data;
+
 import java.util.Objects;
 
-public record Tag(
-        int tagId,
-        String name,
-        int questionId) {
+@Data
+public final class Tag {
+    private final int tagId;
+    private final String name;
+    private final int questionId;
 
     @Override
     public boolean equals(Object o) {

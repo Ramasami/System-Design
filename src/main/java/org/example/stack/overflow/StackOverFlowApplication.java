@@ -57,7 +57,6 @@ public class StackOverFlowApplication {
         int questionVotes = stackOverFlow.getVoteCountForQuestion(question1.getQuestionId());
         logger.info("Vote count for question " + mapper.writeValueAsString(question1.getQuestionId()) + ": " + questionVotes);
 
-        
 
         logger.info("Post: " + mapper.writeValueAsString(question1));
         logger.info("John Doe: " + mapper.writeValueAsString(johnDoe));

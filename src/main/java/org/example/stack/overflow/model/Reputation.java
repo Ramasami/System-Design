@@ -1,13 +1,19 @@
 package org.example.stack.overflow.model;
 
 import lombok.Getter;
+import lombok.NonNull;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 @Getter
 public class Reputation {
+    private static final Logger logger = Logger.getLogger(Reputation.class.getName());
+    private static final int INITIAL_REPUTATION = 100;
+
     private final int userId;
     private final Set<Vote> upVotesForQuestion;
     private final Set<Vote> downVotesForQuestion;
@@ -19,89 +25,100 @@ public class Reputation {
     private final AtomicInteger reputation;
 
     public Reputation(int userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("User ID must be positive");
+        }
         this.userId = userId;
-        upVotesForQuestion = new HashSet<>();
-        downVotesForQuestion = new HashSet<>();
-        upVotesForAnswer = new HashSet<>();
-        downVotesForAnswer = new HashSet<>();
-        acceptedAnswers = new HashSet<>();
-        questionsAnswered = new HashSet<>();
-        questionsAsked = new HashSet<>();
-        reputation = new AtomicInteger(100); // Default reputation
+        upVotesForQuestion = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        downVotesForQuestion = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        upVotesForAnswer = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        downVotesForAnswer = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        acceptedAnswers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        questionsAnswered = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        questionsAsked = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        reputation = new AtomicInteger(INITIAL_REPUTATION);
     }
 
-    public void increase(ReputationType reputationType) {
-        reputation.addAndGet(reputationType.getValue());
+    public void updateReputation(@NonNull ReputationType type, boolean increase) {
+        int delta = increase ? type.getValue() : -type.getValue();
+        int newValue = reputation.addAndGet(delta);
+        logger.info(() -> String.format("User %d reputation %s by %d to %d",
+                userId, increase ? "increased" : "decreased", Math.abs(delta), newValue));
     }
 
-    public void decrease(ReputationType reputationType) {
-        reputation.addAndGet(-reputationType.getValue());
-    }
-
-    public synchronized void removeVote(Vote vote) {
-        if (vote != null) {
-            if (upVotesForAnswer.remove(vote)) {
-                decrease(ReputationType.ANSWER_UP_VOTE);
-            }
-            if (upVotesForQuestion.remove(vote)) {
-                decrease(ReputationType.QUESTION_UP_VOTE);
-            }
-            if (downVotesForAnswer.remove(vote)) {
-                decrease(ReputationType.ANSWER_DOWN_VOTE);
-            }
-            if (downVotesForQuestion.remove(vote)) {
-                decrease(ReputationType.QUESTION_DOWN_VOTE);
-            }
+    public void removeVote(@NonNull Vote vote) {
+        if (upVotesForAnswer.remove(vote)) {
+            updateReputation(ReputationType.ANSWER_UP_VOTE, false);
+        } else if (upVotesForQuestion.remove(vote)) {
+            updateReputation(ReputationType.QUESTION_UP_VOTE, false);
+        } else if (downVotesForAnswer.remove(vote)) {
+            updateReputation(ReputationType.ANSWER_DOWN_VOTE, false);
+        } else if (downVotesForQuestion.remove(vote)) {
+            updateReputation(ReputationType.QUESTION_DOWN_VOTE, false);
         }
     }
 
-    public synchronized void addVote(Vote vote) {
-        if (vote != null) {
-            removeVote(vote);
-
-            if (vote.getVoteType() == VoteType.UP && vote.getVotedOn() == VotedOn.ANSWER) {
-                upVotesForAnswer.add(vote);
-                increase(ReputationType.ANSWER_UP_VOTE);
-            } else if (vote.getVoteType() == VoteType.DOWN && vote.getVotedOn() == VotedOn.ANSWER) {
-                downVotesForAnswer.add(vote);
-                increase(ReputationType.ANSWER_DOWN_VOTE);
-            } else if (vote.getVoteType() == VoteType.UP && vote.getVotedOn() == VotedOn.QUESTION) {
-                upVotesForQuestion.add(vote);
-                increase(ReputationType.QUESTION_UP_VOTE);
-            } else if (vote.getVoteType() == VoteType.DOWN && vote.getVotedOn() == VotedOn.QUESTION) {
-                downVotesForQuestion.add(vote);
-                increase(ReputationType.QUESTION_DOWN_VOTE);
-            }
+    public void addVote(@NonNull Vote vote) {
+        removeVote(vote);
+        switch (vote.getVoteType()) {
+            case UP:
+                handleUpVote(vote);
+                break;
+            case DOWN:
+                handleDownVote(vote);
+                break;
+            case REVOKE:
+                break;
+            default:
+                logger.warning(() -> "Unknown vote type: " + vote.getVoteType());
         }
     }
 
-    public synchronized void addAcceptedAnswer(Answer answer) {
-        if (answer != null && answer.getAuthor() == userId) {
-            if (acceptedAnswers.add(answer.getAnswerId())) {
-                increase(ReputationType.ACCEPTED_ANSWER);
-            }
+    private void handleUpVote(Vote vote) {
+        if (vote.getVoteFor() == VoteFor.ANSWER) {
+            upVotesForAnswer.add(vote);
+            updateReputation(ReputationType.ANSWER_UP_VOTE, true);
         } else {
-            throw new IllegalArgumentException("Invalid answer or author does not match user ID");
+            upVotesForQuestion.add(vote);
+            updateReputation(ReputationType.QUESTION_UP_VOTE, true);
         }
     }
 
-    public synchronized void addQuestionAnswered(Answer answer) {
-        if (answer != null && answer.getAuthor() == userId) {
-            if (questionsAnswered.add(answer.getAnswerId())) {
-                increase(ReputationType.QUESTION_ANSWERED);
-            }
+    private void handleDownVote(Vote vote) {
+        if (vote.getVoteFor() == VoteFor.ANSWER) {
+            downVotesForAnswer.add(vote);
+            updateReputation(ReputationType.ANSWER_DOWN_VOTE, true);
         } else {
-            throw new IllegalArgumentException("Invalid answer or author does not match user ID");
+            downVotesForQuestion.add(vote);
+            updateReputation(ReputationType.QUESTION_DOWN_VOTE, true);
         }
     }
 
-    public synchronized void addQuestionAsked(Question question) {
-        if (question != null && question.getAuthor() == userId) {
-            if (questionsAsked.add(question.getQuestionId())) {
-                increase(ReputationType.QUESTION_ASKED);
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid question or author does not match user ID");
+    public void addAcceptedAnswer(@NonNull Answer answer) {
+        validateUserAction(answer.getAuthor());
+        if (acceptedAnswers.add(answer.getAnswerId())) {
+            updateReputation(ReputationType.ACCEPTED_ANSWER, true);
+        }
+    }
+
+
+    public void addQuestionAnswered(@NonNull Answer answer) {
+        validateUserAction(answer.getAuthor());
+        if (questionsAnswered.add(answer.getAnswerId())) {
+            updateReputation(ReputationType.QUESTION_ANSWERED, true);
+        }
+    }
+
+    public void addQuestionAsked(@NonNull Question question) {
+        validateUserAction(question.getAuthor());
+        if (questionsAsked.add(question.getQuestionId())) {
+            updateReputation(ReputationType.QUESTION_ASKED, true);
+        }
+    }
+
+    private void validateUserAction(int authorId) {
+        if (authorId != userId) {
+            throw new IllegalArgumentException("Author ID does not match user ID");
         }
     }
 }

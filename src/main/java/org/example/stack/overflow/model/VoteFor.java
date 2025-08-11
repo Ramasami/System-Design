@@ -1,6 +1,6 @@
 package org.example.stack.overflow.model;
 
-public enum VotedOn {
+public enum VoteFor {
     QUESTION,
     ANSWER
 }

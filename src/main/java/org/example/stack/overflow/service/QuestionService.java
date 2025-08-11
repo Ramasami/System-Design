@@ -1,17 +1,27 @@
 package org.example.stack.overflow.service;
 
-import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.example.stack.overflow.model.*;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class QuestionService {
-    private static QuestionService instance;
-    private final AtomicInteger questionCounter = new AtomicInteger(0);
-    private final Map<Integer, Question> questions = new ConcurrentHashMap<>();
+    private static final Logger logger = Logger.getLogger(QuestionService.class.getName());
+    private static volatile QuestionService instance;
+
+    private final AtomicInteger questionCounter;
+    private final Map<Integer, Question> questions;
+    private final UserService userService;
+
+    private QuestionService() {
+        this.questionCounter = new AtomicInteger(0);
+        this.questions = new ConcurrentHashMap<>();
+        this.userService = UserService.getInstance();
+    }
 
     public static QuestionService getInstance() {
         if (instance == null) {
@@ -24,74 +34,76 @@ public class QuestionService {
         return instance;
     }
 
-    public Question createNewQuestion(int author, String title, String content) {
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("Title cannot be null or empty");
-        }
-        if (content == null || content.isBlank()) {
-            throw new IllegalArgumentException("Content cannot be null or empty");
-        }
-        if (!UserService.getInstance().userExists(author)) {
-            throw new IllegalArgumentException("Author does not exist");
-        }
+    public Question createNewQuestion(int author, @NonNull String title, @NonNull String content) {
+        validateContent(title, "Title");
+        validateContent(content, "Content");
+        userService.getUser(author); // Validates user exists
 
         int questionId = questionCounter.incrementAndGet();
         Question question = new Question(questionId, title, content, author, new java.util.Date());
         questions.put(questionId, question);
-        UserService.getInstance().addQuestionToUser(author, question);
+
+        userService.addQuestionToUser(author, question);
         ReputationService.getInstance().recordQuestionsAsked(author, questionId);
+        logger.info(() -> String.format("Created question %d by user %d: %s",
+                questionId, author, title));
+
         return question;
     }
 
     public Question getQuestion(int questionId) {
-        if (questionId <= 0) {
-            throw new IllegalArgumentException("Post ID must be positive");
+        validateQuestionId(questionId);
+        Question question = questions.get(questionId);
+        if (question == null) {
+            throw new IllegalArgumentException("Question not found with ID: " + questionId);
         }
-        return questions.get(questionId);
+        return question;
     }
 
-    public boolean questionExists(int questionId) {
-        return getQuestion(questionId) != null;
+    public void addAnswerToQuestion(int questionId, @NonNull Answer answer) {
+        Question question = getQuestion(questionId);
+        if (question.getAnswers().add(answer)) {
+            logger.info(() -> String.format("Added answer %d to question %d",
+                    answer.getAnswerId(), questionId));
+        }
     }
 
-    public boolean addAnswerToQuestion(int questionId, Answer answer) {
-        if (!questionExists(questionId)) {
-            throw new IllegalArgumentException("Question does not exist");
+    public void addTagToQuestion(int questionId, @NonNull Tag tag) {
+        Question question = getQuestion(questionId);
+        if (question.getTags().add(tag)) {
+            logger.info(() -> String.format("Added tag '%s' to question %d",
+                    tag.getName(), questionId));
         }
-        if (answer == null) {
-            throw new IllegalArgumentException("Content cannot be null or empty");
-        }
-        getQuestion(questionId).getAnswers().add(answer);
-        return true;
     }
 
-    public void addTagToQuestion(int questionId, Tag tag) {
-        if (!questionExists(questionId)) {
-            throw new IllegalArgumentException("Question does not exist");
-        }
-        if (tag == null) {
-            throw new IllegalArgumentException("Tag cannot be null");
-        }
-        getQuestion(questionId).getTags().add(tag);
-    }
-
-    public boolean isQuestionToAuthor(int questionId, int authorId) {
-        if (!questionExists(questionId)) {
-            throw new IllegalArgumentException("Question does not exist");
-        }
-        if (!UserService.getInstance().userExists(authorId)) {
-            throw new IllegalArgumentException("Author does not exist");
-        }
-        return getQuestion(questionId).getAuthor() == authorId;
+    public boolean isQuestionAuthor(int questionId, int authorId) {
+        Question question = getQuestion(questionId);
+        userService.getUser(authorId); // Validates user exists
+        return question.getAuthor() == authorId;
     }
 
     public boolean removeVoteFromQuestion(int questionId, int userId) {
-        Vote vote = new Vote(questionId, userId, null, VotedOn.QUESTION);
-        if (QuestionService.getInstance().getQuestion(questionId).getVotes().remove(vote)) {
-            int authorId = QuestionService.getInstance().getQuestion(questionId).getAuthor();
-            ReputationService.getInstance().recordVoteForUser(authorId, vote);
+        Question question = getQuestion(questionId);
+        Vote vote = new Vote(questionId, userId, VoteType.REVOKE, VoteFor.QUESTION);
+
+        if (question.getVotes().remove(vote)) {
+            ReputationService.getInstance().recordVoteForUser(question.getAuthor(), vote);
+            logger.info(() -> String.format("Removed vote from question %d by user %d",
+                    questionId, userId));
             return true;
         }
         return false;
+    }
+
+    private void validateQuestionId(int questionId) {
+        if (questionId <= 0) {
+            throw new IllegalArgumentException("Question ID must be positive");
+        }
+    }
+
+    private void validateContent(String content, String field) {
+        if (content.trim().isEmpty()) {
+            throw new IllegalArgumentException(field + " cannot be empty");
+        }
     }
 }

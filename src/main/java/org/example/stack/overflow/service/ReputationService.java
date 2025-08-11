@@ -1,14 +1,26 @@
 package org.example.stack.overflow.service;
 
-import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.example.stack.overflow.model.Answer;
-import org.example.stack.overflow.model.Reputation;
+import org.example.stack.overflow.model.Question;
 import org.example.stack.overflow.model.User;
 import org.example.stack.overflow.model.Vote;
 
-@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+import java.util.logging.Logger;
+
 public class ReputationService {
-    private static ReputationService instance;
+    private static final Logger logger = Logger.getLogger(ReputationService.class.getName());
+    private static volatile ReputationService instance;
+
+    private final UserService userService;
+    private final QuestionService questionService;
+    private final AnswerService answerService;
+
+    private ReputationService() {
+        this.userService = UserService.getInstance();
+        this.questionService = QuestionService.getInstance();
+        this.answerService = AnswerService.getInstance();
+    }
 
     public static ReputationService getInstance() {
         if (instance == null) {
@@ -21,52 +33,34 @@ public class ReputationService {
         return instance;
     }
 
-    public void recordVoteForUser(int userId, Vote vote) {
-        if (!UserService.getInstance().userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        if (vote == null) {
-            throw new IllegalArgumentException("Vote cannot be null");
-        }
-        User user = UserService.getInstance().getUser(userId);
-        Reputation reputation = user.getReputation();
-        reputation.addVote(vote);
+    public void recordVoteForUser(int userId, @NonNull Vote vote) {
+        User user = userService.getUser(userId);
+        user.getReputation().addVote(vote);
+        logger.info(() -> String.format("Recorded %s vote for user %d",
+                vote.getVoteType(), userId));
     }
 
     public void recordAcceptedAnswerForUser(int answerId) {
-        Answer answer = AnswerService.getInstance().getAnswer(answerId);
-        if (answer == null || answer.getAuthor() <= 0) {
-            throw new IllegalArgumentException("Invalid answer or author");
-        }
-        User user = UserService.getInstance().getUser(answer.getAuthor());
-        if (user == null) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        Reputation reputation = user.getReputation();
-        reputation.addAcceptedAnswer(answer);
+        Answer answer = answerService.getAnswer(answerId);
+        User user = userService.getUser(answer.getAuthor());
+        user.getReputation().addAcceptedAnswer(answer);
+        logger.info(() -> String.format("Recorded accepted answer %d for user %d",
+                answerId, answer.getAuthor()));
     }
 
     public void recordQuestionsAsked(int userId, int questionId) {
-        if (!UserService.getInstance().userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        if (!QuestionService.getInstance().questionExists(questionId)) {
-            throw new IllegalArgumentException("Question does not exist");
-        }
-        User user = UserService.getInstance().getUser(userId);
-        Reputation reputation = user.getReputation();
-        reputation.addQuestionAsked(QuestionService.getInstance().getQuestion(questionId));
+        User user = userService.getUser(userId);
+        Question question = questionService.getQuestion(questionId);
+        user.getReputation().addQuestionAsked(question);
+        logger.info(() -> String.format("Recorded question %d asked by user %d",
+                questionId, userId));
     }
 
     public void recordAnswersGiven(int userId, int answerId) {
-        if (!UserService.getInstance().userExists(userId)) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-        if (!AnswerService.getInstance().answerExists(answerId)) {
-            throw new IllegalArgumentException("Answer does not exist");
-        }
-        User user = UserService.getInstance().getUser(userId);
-        Reputation reputation = user.getReputation();
-        reputation.addQuestionAnswered(AnswerService.getInstance().getAnswer(answerId));
+        User user = userService.getUser(userId);
+        Answer answer = answerService.getAnswer(answerId);
+        user.getReputation().addQuestionAnswered(answer);
+        logger.info(() -> String.format("Recorded answer %d given by user %d",
+                answerId, userId));
     }
 }

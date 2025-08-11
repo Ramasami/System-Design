@@ -5,21 +5,21 @@ import lombok.Data;
 import java.util.Objects;
 
 @Data
-public final class Vote {
+public class Vote {
     private final Integer voterId;
     private final int userId;
     private final VoteType voteType;
-    private final VotedOn votedOn;
+    private final VoteFor voteFor;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Vote vote)) return false;
-        return userId == vote.userId && Objects.equals(voterId, vote.voterId) && votedOn == vote.votedOn;
+        return userId == vote.userId && Objects.equals(voterId, vote.voterId) && voteFor == vote.voteFor;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(voterId, userId, votedOn);
+        return Objects.hash(voterId, userId, voteFor);
     }
 }
