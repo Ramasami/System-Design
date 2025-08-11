@@ -1,0 +1,117 @@
+classDiagram
+    class StackOverFlowApplication {
+    }
+    class StackOverFlow {
+        +User createUser()
+        +Question createNewQuestion()
+        +Answer addAnswerToQuestion()
+        +Tag addTag()
+        +Comment addCommentToAnswer()
+        +void addVoteToQuestion()
+        +void addVoteToAnswer()
+        +int getVoteCountForAnswer()
+        +int getVoteCountForQuestion()
+        +boolean removeVoteFromQuestion()
+        +boolean removeVoteFromAnswer()
+        +int getUserReputation()
+        +boolean acceptAnswer()
+        +void validateUserId()
+        +void validateIds()
+        +void validateContent()
+        +void validateUsername()
+    }
+    class Answer {
+        +boolean equals()
+        +int hashCode()
+    }
+    class Tag {
+        +boolean equals()
+        +int hashCode()
+    }
+    class Reputation {
+        +void updateReputation()
+        +void removeVote()
+        +void addVote()
+        +void handleUpVote()
+        +void handleDownVote()
+        +void addAcceptedAnswer()
+        +void addQuestionAnswered()
+        +void addQuestionAsked()
+        +void validateUserAction()
+    }
+    class Vote {
+        +boolean equals()
+        +int hashCode()
+    }
+    class User {
+        +boolean equals()
+        +int hashCode()
+    }
+    class Question {
+        +void validateId()
+        +void validateText()
+        +boolean equals()
+        +int hashCode()
+    }
+    class Comment {
+        +void validateId()
+        +void validateContent()
+        +boolean equals()
+        +int hashCode()
+    }
+    class TagService {
+        +Tag addTag()
+        +Tag getTag()
+        +void validateTagId()
+        +void validateTagName()
+    }
+    class UserService {
+        +User createUser()
+        +User getUser()
+        +boolean addQuestionToUser()
+        +List<Question> getUserQuestions()
+        +int getReputation()
+        +void validateUserId()
+        +void validateUsername()
+    }
+    class VoteService {
+        +void addVoteToQuestion()
+        +void addVoteToAnswer()
+        +int getVoteCountForQuestion()
+        +int getVoteCountForAnswer()
+        +boolean removeVoteFromQuestion()
+        +boolean removeVoteFromAnswer()
+        +int calculateVoteCount()
+        +void validateIds()
+    }
+    class CommentService {
+        +Comment addComment()
+        +Comment getComment()
+        +void validateCommentId()
+        +void validateContent()
+    }
+    class ReputationService {
+        +void recordVoteForUser()
+        +void recordAcceptedAnswerForUser()
+        +void recordQuestionsAsked()
+        +void recordAnswersGiven()
+    }
+    class QuestionService {
+        +Question createNewQuestion()
+        +Question getQuestion()
+        +void addAnswerToQuestion()
+        +void addTagToQuestion()
+        +boolean isQuestionAuthor()
+        +boolean removeVoteFromQuestion()
+        +void validateQuestionId()
+        +void validateContent()
+    }
+    class AnswerService {
+        +Answer addAnswer()
+        +Answer getAnswer()
+        +boolean isAnswerToQuestion()
+        +void addCommentToAnswer()
+        +boolean acceptAnswer()
+        +void validateAnswerId()
+        +void validateContent()
+    }
