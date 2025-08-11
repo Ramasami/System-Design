@@ -1,0 +1,151 @@
+classDiagram
+    direction LR
+
+    %% Facade / Entry Point
+    class SplitWiseManager {
+        +User createUser(name: String, email: String)
+        +Transaction createTransaction(type: PaymentType, lenderId: int, description: String, amount: double, lendeeShares: Map<int,double>, groupId: Integer)
+        +User getUser(userId: int)
+        +Group createGroup(name: String, description: String)
+        +boolean addUserToGroup(groupId: int, userId: int)
+        +Group getGroup(groupId: int)
+        +List~Ledger~ getTransactions(fromId: int)
+        +List~Ledger~ getTransactions(fromId: int, toId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int, fromId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int, fromId: int, toId: int)
+        +boolean settleExpenses(fromId: int, toId: int)
+    }
+
+    %% Services
+    class UserService {
+        +User createUser(name: String, email: String)
+        +boolean isUserExists(userId: int)
+        +User getUser(userId: int)
+        +void addTransactionToUsers(tx: Transaction)
+    }
+
+    class GroupService {
+        +Group addGroup(name: String, description: String)
+        +boolean addUserToGroup(groupId: int, userId: int)
+        +boolean isGroupExists(groupId: int)
+        +Group getGroup(groupId: int)
+        +void addTransactionToGroup(groupId: int, tx: Transaction)
+    }
+
+    class TransactionService {
+        +Transaction createTransaction(type: PaymentType, lenderId: int, description: String, amount: double, lendeeShares: Map<int,double>, groupId: Integer)
+        +List~Ledger~ getTransactions(fromId: int)
+        +Ledger getTransactions(fromId: int, toId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int, fromId: int)
+        +List~Ledger~ getGroupTransactions(groupId: int, fromId: int, toId: int)
+        +boolean settleExpenses(fromId: int, toId: int)
+    }
+
+    %% Data Stores (In-Memory)
+    class UserData {
+        +User addUser(name: String, email: String)
+        +boolean isUserExists(userId: int)
+        +User getUser(userId: int)
+        +void addSplit(userId: int, split: Split)
+    }
+
+    class GroupData {
+        +Group addGroup(name: String, description: String)
+        +boolean isGroupExists(groupId: int)
+        +Group getGroup(groupId: int)
+    }
+
+    class TransactionData {
+        +Transaction addTransaction(type: PaymentType, lenderId: int, description: String, amount: double, lendeeShares: Map<int,double>, groupId: Integer)
+        +Transaction getTransaction(id: int)
+    }
+
+    %% Domain Model
+    class User {
+        +int id
+        +String name
+        +String email
+        +List~Split~ splits
+        +void addSplit(split: Split)
+    }
+
+    class Group {
+        +int id
+        +String name
+        +String description
+        +Date createdAt
+        +Set~int~ members
+        +List~Transaction~ transactions
+        +boolean addMember(userId: int)
+        +boolean addTransaction(tx: Transaction)
+    }
+
+    class PaymentType {
+        <<enumeration>>
+        EQUAL
+        PERCENTAGE
+        EXACT
+    }
+
+    class Transaction {
+        <<abstract>>
+        +int id
+        +int lenderId
+        +String description
+        +double amount
+        +PaymentType paymentType
+        +Map~int,double~ lendeeShares
+        +Date createdAt
+        +Integer groupId
+        +List~Split~ splits
+        +void validateAdditionalLenderInformation(lenderId: int, lendeeShares: Map<int,double>, amount: double)
+        +void calculateCharges()
+        +List~Split~ getParticipantShares()
+    }
+
+    class EqualTransaction
+    class PercentageTransaction
+    class ExactTransaction
+
+    class Split {
+        +int transactionId
+        +Integer groupId
+        +int lenderId
+        +int borrowerId
+        +double amount
+        +boolean enabled
+    }
+
+    class Ledger {
+        +int fromUser
+        +int toUser
+        +double cost
+        +Ledger addCost(cost: double)
+    }
+
+    %% Relationships
+    SplitWiseManager ..> UserService
+    SplitWiseManager ..> GroupService
+    SplitWiseManager ..> TransactionService
+
+    UserService ..> UserData
+    GroupService ..> GroupData
+    TransactionService ..> TransactionData
+    TransactionService ..> UserService
+    TransactionService ..> GroupService
+
+    Group "1" o-- "0..*" Transaction : contains
+    Group "1" o-- "0..*" User : members
+
+    Transaction <|-- EqualTransaction
+    Transaction <|-- PercentageTransaction
+    Transaction <|-- ExactTransaction
+
+    Transaction "1" o-- "1..*" Split : produces
+    User "1" o-- "0..*" Split : participates in
+
+    %% Ledgers are derived views created by services
+    TransactionService ..> Ledger : builds
+    TransactionService ..> Split : aggregates
